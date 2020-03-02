@@ -28,13 +28,16 @@ io.on('connection', socket => {
         console.log(socket.id, 'joined room:', data.room_name)
     });
 
-    // socket.on('time', data => {
-    //     console.log('received time', data);
-
-    //     io.to(data.room).emit('time_sync', {
-    //         time: data.timestamp
-    //     })
-    // })
+    socket.on('time', data => {
+        const {room_name, username, timestamp} = data;
+        // console.log('received time', data);
+        socket.broadcast.to(room_name).emit('time', {
+            timestamp
+        })
+        // io.to(data.room).emit('time_sync', {
+        //     time: data.timestamp
+        // })
+    })
     socket.on('pause', data => {
         const {room_name, username} = data;
         

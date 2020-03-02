@@ -15,6 +15,8 @@ firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
 
 let player;
+let socket_time_interval;
+
 function onYouTubeIframeAPIReady() {
 	player = new YT.Player('player', {
 		height: '390',
@@ -25,12 +27,20 @@ function onYouTubeIframeAPIReady() {
 			'onStateChange': onPlayerStateChange
 		}
 	});
+
 }
 function onPlayerReady(event) {
 	event.target.playVideo();
+	socket_time_interval = setInterval( () => {
+		socket.emit('time', {
+			timestamp: player.getCurrentTime(),
+			room_name,
+			username
+		})
+	}, 1000)
 }
 
-let socket_time_interval;
+
 
 function onPlayerStateChange(event) {
 	console.log('state changed', event.data)
@@ -54,6 +64,7 @@ function onPlayerStateChange(event) {
 		// }, 1000);
 	}
 
+
 }
 function stopVideo() {
 	player.stopVideo();
@@ -71,10 +82,10 @@ socket.on('play', data => {
 	player.playVideo();
 })
 
-socket.on('time_sync', data => {
-	console.log(data)
-	console.log(Math.abs(player.getCurrentTime() - data.timestamp) < 2)
-	if ( Math.abs(player.getCurrentTime() - data.timestamp) > 2){
+socket.on('time', data => {
+	// console.log(data)
+	// console.log(Math.abs(player.getCurrentTime() - data.timestamp) < 2)
+	if ( Math.abs(player.getCurrentTime() - data.timestamp) > 1){
 		player.seekTo(data.timestamp, true)
 	}
 })
