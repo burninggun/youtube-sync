@@ -1,4 +1,10 @@
 var socket = io.connect('http://localhost:3000');
+let room_name = 'room1';
+let username = null
+
+socket.emit('join room', {
+	room_name
+})
 
 let tag = document.createElement('script');
 
@@ -20,27 +26,56 @@ function onYouTubeIframeAPIReady() {
 		}
 	});
 }
-
 function onPlayerReady(event) {
 	event.target.playVideo();
-	setInterval(function () {
-		socket.emit('time', {
-			timestamp: player.getCurrentTime(),
-		})
-		console.log(player.getCurrentTime());
-	}, 1000)
 }
 
+let socket_time_interval;
 
-let done = false;
 function onPlayerStateChange(event) {
-	console.log('state change')
-	//   if (event.data == YT.PlayerState.PLAYING && !done) {
-	//     setTimeout(stopVideo, 6000);
-	//     done = true;
-	//   }
+	console.log('state changed', event.data)
+	//event.data === 2 --> player is paused
+	if (event.data === 2) {
+		socket.emit('pause', {
+			room_name,
+			username,
+		})
+		// clearInterval(socket_time_interval);
+	} else if (event.data == 1) {
+		socket.emit('play', {
+			room_name,
+			username,
+		})
+		// socket_time_interval = setInterval(function () {
+		// 	socket.emit('time', {
+		// 		timestamp: player.getCurrentTime(),
+		// 		room: room
+		// 	})
+		// }, 1000);
+	}
+
 }
 function stopVideo() {
 	player.stopVideo();
 }
+
+socket.on('new username', data => {
+	username = data.username
+})
+
+socket.on('pause', data => {
+	player.pauseVideo();
+})
+
+socket.on('play', data => {
+	player.playVideo();
+})
+
+socket.on('time_sync', data => {
+	console.log(data)
+	console.log(Math.abs(player.getCurrentTime() - data.timestamp) < 2)
+	if ( Math.abs(player.getCurrentTime() - data.timestamp) > 2){
+		player.seekTo(data.timestamp, true)
+	}
+})
 
